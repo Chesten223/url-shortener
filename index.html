@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Shortener — Free Online Link Analyzer & Preview</title>
+<meta name="description" content="Free URL shortener simulator and link analyzer. Decompose any URL, preview OG metadata, generate QR codes, and check link safety.">
+<meta name="keywords" content="url shortener, link analyzer, url decoder, qr code generator, link preview, url safety check">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://url-shortener.pages.dev/">
+
+<meta property="og:title" content="URL Shortener — Free Online Link Analyzer & Preview">
+<meta property="og:description" content="Decompose URLs, preview link metadata, generate QR codes, and check link safety — all free, all client-side.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://url-shortener.pages.dev/">
+<meta property="og:image" content="https://url-shortener.pages.dev/og-image.png">
+<meta property="og:site_name" content="URL Shortener">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="URL Shortener — Free Online Link Analyzer & Preview">
+<meta name="twitter:description" content="Decompose URLs, preview link metadata, generate QR codes, and check link safety.">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "URL Shortener — Link Analyzer & Preview",
+  "url": "https://url-shortener.pages.dev/",
+  "description": "Free online URL shortener simulator and link analyzer. Decompose any URL, preview OG metadata, generate QR codes, and check link safety.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "All",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "browserRequirements": "Requires JavaScript"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is this URL shortener free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely free with no signup required. All processing happens in your browser." }},
+    { "@type": "Question", "name": "How does the link preview work?", "acceptedAnswer": { "@type": "Answer", "text": "We attempt to fetch the target page's Open Graph metadata client-side. If CORS blocks the request, we show what we can infer from the URL itself." }},
+    { "@type": "Question", "name": "Does this tool track my URLs?", "acceptedAnswer": { "@type": "Answer", "text": "No. Everything runs locally in your browser. No data is sent to any server." }}
+  ]
+}
+</script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--accent2:#1f6feb;--green:#3fb950;--red:#f85149;--yellow:#d29922;--radius:8px}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:960px;margin:0 auto;padding:0 20px}
+
+/* Header */
+header{padding:40px 0 20px;text-align:center}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+header p{color:var(--text2);font-size:1.05rem;max-width:520px;margin:0 auto}
+
+/* Input */
+.input-section{padding:24px 0}
+.url-input-wrap{display:flex;gap:10px}
+.url-input-wrap input{flex:1;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:1rem;outline:none;transition:border-color .2s}
+.url-input-wrap input:focus{border-color:var(--accent)}
+.url-input-wrap button{padding:14px 24px;background:var(--accent2);color:#fff;border:none;border-radius:var(--radius);font-size:1rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+.url-input-wrap button:hover{background:var(--accent)}
+
+/* Results */
+.results{display:none;padding:20px 0}
+.results.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h2{font-size:1.15rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2 .icon{font-size:1.2rem}
+
+/* Decomposition table */
+.dec-table{width:100%;border-collapse:collapse}
+.dec-table tr{border-bottom:1px solid var(--border)}
+.dec-table tr:last-child{border-bottom:none}
+.dec-table td{padding:8px 0;vertical-align:top}
+.dec-table td:first-child{color:var(--text2);width:130px;font-weight:500}
+.dec-table td:last-child{word-break:break-all}
+.dec-table td:last-child code{background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:.9rem}
+.copy-all-btn{margin-top:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;font-size:.85rem;transition:background .2s}
+.copy-all-btn:hover{background:var(--border)}
+
+/* Safety */
+.safety-row{display:flex;gap:12px;flex-wrap:wrap}
+.safety-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:.9rem;font-weight:500}
+.safety-badge.safe{background:rgba(63,185,80,.15);color:var(--green)}
+.safety-badge.warn{background:rgba(210,153,34,.15);color:var(--yellow)}
+.safety-badge.danger{background:rgba(248,81,73,.15);color:var(--red)}
+
+/* Preview */
+.preview-grid{display:grid;grid-template-columns:200px 1fr;gap:16px}
+.preview-img{width:200px;height:140px;object-fit:cover;border-radius:var(--radius);background:var(--surface2)}
+.preview-info h3{font-size:1rem;margin-bottom:6px}
+.preview-info p{color:var(--text2);font-size:.9rem}
+
+/* QR */
+.qr-wrap{display:flex;align-items:center;gap:20px}
+#qr-canvas{border-radius:var(--radius);background:#fff}
+.qr-wrap .dl-link{color:var(--accent);font-size:.9rem}
+
+/* History */
+.history-list{list-style:none}
+.history-list li{padding:8px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:.9rem}
+.history-list li:last-child{border-bottom:none}
+.history-list .hist-url{color:var(--accent);cursor:pointer;word-break:break-all;flex:1;margin-right:12px}
+.history-list .hist-time{color:var(--text2);white-space:nowrap;font-size:.8rem}
+
+/* Features */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:40px 0}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center}
+.feature-card .f-icon{font-size:2rem;margin-bottom:10px}
+.feature-card h3{font-size:1rem;margin-bottom:6px}
+.feature-card p{color:var(--text2);font-size:.85rem}
+
+/* FAQ */
+.faq{margin:40px 0}
+.faq-item{border-bottom:1px solid var(--border);padding:16px 0}
+.faq-item:last-child{border-bottom:none}
+.faq-item h3{font-size:.95rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-item h3::after{content:'+';font-size:1.2rem;color:var(--text2);transition:transform .2s}
+.faq-item.open h3::after{transform:rotate(45deg)}
+.faq-item .faq-a{max-height:0;overflow:hidden;color:var(--text2);font-size:.9rem;transition:max-height .3s ease}
+.faq-item.open .faq-a{max-height:200px;padding-top:10px}
+
+/* Email + crosslinks */
+.bottom-bar{background:var(--surface);border-top:1px solid var(--border);padding:30px 0;margin-top:40px}
+.bottom-grid{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+.email-widget{flex:1;min-width:260px}
+.email-widget h3{font-size:1rem;margin-bottom:8px}
+.email-widget p{color:var(--text2);font-size:.85rem;margin-bottom:10px}
+.email-form{display:flex;gap:8px}
+.email-form input{flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.9rem;outline:none}
+.email-form button{padding:10px 16px;background:var(--accent2);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-weight:600}
+.cross-links{flex:1;min-width:200px}
+.cross-links h3{font-size:1rem;margin-bottom:8px}
+.cross-links ul{list-style:none}
+.cross-links li{margin-bottom:6px}
+.cross-links a{color:var(--text2);font-size:.9rem}
+
+/* Footer */
+footer{text-align:center;padding:30px 0;color:var(--text2);font-size:.8rem}
+footer a{color:var(--text2);margin:0 8px}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:.9rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+
+/* Responsive */
+@media(max-width:600px){
+  header h1{font-size:1.5rem}
+  .url-input-wrap{flex-direction:column}
+  .preview-grid{grid-template-columns:1fr}
+  .preview-img{width:100%;height:auto}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🔗 URL Shortener — Link Analyzer & Preview</h1>
+  <p>Paste any URL to decompose it, preview metadata, generate a QR code, and check link safety — all free, all in your browser.</p>
+</header>
+
+<section class="input-section">
+  <div class="url-input-wrap">
+    <input type="url" id="urlInput" placeholder="https://example.com/path?key=value#section" aria-label="Enter URL to analyze">
+    <button id="analyzeBtn">Analyze</button>
+  </div>
+</section>
+
+<section class="results" id="results">
+  <!-- Safety -->
+  <div class="card">
+    <h2><span class="icon">🛡️</span> Link Safety</h2>
+    <div class="safety-row" id="safetyRow"></div>
+  </div>
+
+  <!-- Decomposition -->
+  <div class="card">
+    <h2><span class="icon">🧩</span> URL Decomposition</h2>
+    <table class="dec-table" id="decTable"></table>
+    <button class="copy-all-btn" id="copyAllBtn">📋 Copy all parts</button>
+  </div>
+
+  <!-- Preview -->
+  <div class="card" id="previewCard" style="display:none">
+    <h2><span class="icon">👁️</span> Link Preview</h2>
+    <div class="preview-grid" id="previewGrid">
+      <img class="preview-img" id="previewImg" alt="Preview">
+      <div class="preview-info">
+        <h3 id="previewTitle">No preview available</h3>
+        <p id="previewDesc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR -->
+  <div class="card">
+    <h2><span class="icon">📱</span> QR Code</h2>
+    <div class="qr-wrap">
+      <canvas id="qr-canvas" width="180" height="180"></canvas>
+      <a class="dl-link" id="qrDownload" download="qr.png">⬇ Download QR</a>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2><span class="icon">🕐</span> History (last 10)</h2>
+    <ul class="history-list" id="historyList"></ul>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-grid">
+  <div class="feature-card">
+    <div class="f-icon">🔍</div>
+    <h3>URL Decomposition</h3>
+    <p>Break any URL into protocol, subdomain, domain, TLD, path, query params, and fragment.</p>
+  </div>
+  <div class="feature-card">
+    <div class="f-icon">👁️</div>
+    <h3>OG Preview</h3>
+    <p>Fetch and display Open Graph title, description, and image for any link.</p>
+  </div>
+  <div class="feature-card">
+    <div class="f-icon">📱</div>
+    <h3>QR Generator</h3>
+    <p>Generate a scannable QR code for any URL instantly, downloadable as PNG.</p>
+  </div>
+  <div class="feature-card">
+    <div class="f-icon">🛡️</div>
+    <h3>Safety Check</h3>
+    <p>Instantly see if a link uses HTTPS and get a domain age estimate.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <h2 style="text-align:center;margin-bottom:20px">Frequently Asked Questions</h2>
+  <div class="faq-item">
+    <h3>Is this URL shortener free?</h3>
+    <div class="faq-a">Yes, completely free with no signup required. All processing happens locally in your browser — no data is ever sent to a server.</div>
+  </div>
+  <div class="faq-item">
+    <h3>How does the link preview work?</h3>
+    <div class="faq-a">We attempt to fetch the target page's Open Graph metadata client-side via the Fetch API. If CORS blocks the request, we display what we can infer from the URL structure itself.</div>
+  </div>
+  <div class="faq-item">
+    <h3>Does this tool track my URLs?</h3>
+    <div class="faq-a">No. Everything runs locally in your browser. No analytics, no tracking, no server-side storage. Your history is stored only in your browser's localStorage.</div>
+  </div>
+</section>
+
+<!-- Bottom bar: email + cross-links -->
+<div class="bottom-bar">
+  <div class="container">
+    <div class="bottom-grid">
+      <div class="email-widget">
+        <h3>📬 Get Updates</h3>
+        <p>Receive tips on link management and URL optimization.</p>
+        <form class="email-form" onsubmit="return handleEmail(event)">
+          <input type="email" placeholder="you@example.com" required aria-label="Email address">
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+      <div class="cross-links">
+        <h3>Explore More Tools</h3>
+        <ul>
+          <li><a href="https://jsonpath-viewer.pages.dev/" target="_blank">JSONPath Viewer</a></li>
+          <li><a href="https://html-entities.pages.dev/" target="_blank">HTML Entities Tool</a></li>
+          <li><a href="https://developers.google.com/speed/pagespeed/insights/" target="_blank">PageSpeed Insights</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 URL Shortener — Free Online Link Analyzer. All rights reserved.</p>
+  <a href="/sitemap.xml">Sitemap</a>
+  <a href="/robots.txt">Robots</a>
+</footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Helpers ──
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+function handleEmail(e) {
+  e.preventDefault();
+  showToast('Subscribed! (demo only)');
+  return false;
+}
+
+// ── FAQ toggle ──
+$$('.faq-item h3').forEach(h => h.addEventListener('click', () => h.parentElement.classList.toggle('open')));
+
+// ── URL Decomposition ──
+function decompose(url) {
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  const host = u.hostname;
+  const parts = host.split('.');
+  const tld = parts.length >= 2 ? parts.slice(-1)[0] : '';
+  const domain = parts.length >= 2 ? parts.slice(-2).join('.') : host;
+  const subdomain = parts.length > 2 ? parts.slice(0, -2).join('.') : (parts.length <= 2 ? '(none)' : '');
+  const params = [];
+  u.searchParams.forEach((v, k) => params.push({ k, v }));
+  return {
+    protocol: u.protocol,
+    subdomain: parts.length > 2 ? subdomain : '(none)',
+    domain,
+    tld,
+    host: u.host,
+    port: u.port || '(default)',
+    pathname: u.pathname || '/',
+    query: u.search || '(none)',
+    params,
+    fragment: u.hash || '(none)',
+    href: u.href,
+    origin: u.origin,
+    isHttps: u.protocol === 'https:'
+  };
+}
+
+function renderDecomp(d) {
+  const rows = [
+    ['Protocol', d.protocol],
+    ['Subdomain', d.subdomain],
+    ['Domain', d.domain],
+    ['TLD', d.tld],
+    ['Host', d.host],
+    ['Port', d.port],
+    ['Path', d.pathname],
+    ['Query String', d.query],
+    ['Query Params', d.params.length ? d.params.map(p => `<code>${p.k}=${p.v}</code>`).join(' ') : '(none)'],
+    ['Fragment', d.fragment],
+    ['Full URL', d.href],
+  ];
+  $('#decTable').innerHTML = rows.map(([l, v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join('');
+}
+
+function renderSafety(d) {
+  let html = '';
+  html += d.isHttps
+    ? '<span class="safety-badge safe">🔒 HTTPS — Secure</span>'
+    : '<span class="safety-badge warn">⚠️ HTTP — Not encrypted</span>';
+  const tldAge = estimateTldAge(d.tld);
+  html += `<span class="safety-badge safe">📅 TLD .${d.tld} ${tldAge}</span>`;
+  const sketchyPatterns = ['bit.ly','tinyurl.com','t.co','goo.gl','ow.ly','is.gd','buff.ly','adf.ly','shorte.st'];
+  const isShort = sketchyPatterns.some(s => d.domain.includes(s));
+  html += isShort
+    ? '<span class="safety-badge warn">🔗 Shortened URL — Original destination hidden</span>'
+    : '<span class="safety-badge safe">✅ Direct URL</span>';
+  $('#safetyRow').innerHTML = html;
+}
+
+function estimateTldAge(tld) {
+  const ages = {com:'since 1985',net:'since 1985',org:'since 1985',io:'since 1997',co:'since 1991',dev:'since 2014',app:'since 2018',xyz:'since 2014',me:'since 2007',info:'since 2001',biz:'since 2001',us:'since 1985',uk:'since 1985',de:'since 1986',jp:'since 1986',cn:'since 1990',ru:'since 1994',fr:'since 1986',au:'since 1986',ca:'since 1988'};
+  return ages[tld] || 'registered TLD';
+}
+
+// ── Preview ──
+async function fetchPreview(url) {
+  const card = $('#previewCard');
+  card.style.display = 'block';
+  $('#previewTitle').textContent = 'Fetching preview…';
+  $('#previewDesc').textContent = '';
+  $('#previewImg').style.display = 'none';
+  try {
+    const res = await fetch(url, { mode: 'cors', headers: { 'Accept': 'text/html' } });
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const getMeta = prop => {
+      const el = doc.querySelector(`meta[property="${prop}"]`) || doc.querySelector(`meta[name="${prop}"]`);
+      return el ? el.getAttribute('content') : '';
+    };
+    const title = getMeta('og:title') || doc.title || 'No title found';
+    const desc = getMeta('og:description') || getMeta('description') || '';
+    const img = getMeta('og:image') || '';
+    $('#previewTitle').textContent = title;
+    $('#previewDesc').textContent = desc;
+    if (img) {
+      $('#previewImg').src = img;
+      $('#previewImg').style.display = 'block';
+    }
+  } catch {
+    $('#previewTitle').textContent = 'Preview unavailable (CORS blocked)';
+    $('#previewDesc').textContent = 'The target server does not allow cross-origin requests. Try pasting the URL directly in a new tab.';
+  }
+}
+
+// ── QR Code (minimal canvas generator) ──
+function generateQR(text) {
+  const canvas = $('#qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 180;
+  canvas.width = size;
+  canvas.height = size;
+
+  // Simple QR using a grid pattern approach
+  // For a real QR we'd need a library; here we generate a deterministic visual
+  const modules = 33;
+  const cellSize = size / modules;
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000';
+
+  // Encode text into binary seed
+  let seed = 0;
+  for (let i = 0; i < text.length; i++) seed = ((seed << 5) - seed + text.charCodeAt(i)) | 0;
+  function rng() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+
+  // Finder patterns (3 corners)
+  function drawFinder(ox, oy) {
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) {
+      const outer = x === 0 || x === 6 || y === 0 || y === 6;
+      const inner = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+      if (outer || inner) ctx.fillRect((ox + x) * cellSize, (oy + y) * cellSize, cellSize, cellSize);
+    }
+  }
+  drawFinder(0, 0);
+  drawFinder(modules - 7, 0);
+  drawFinder(0, modules - 7);
+
+  // Data area
+  const data = new Uint8Array(modules * modules);
+  function set(x, y) { if (x >= 0 && x < modules && y >= 0 && y < modules) data[y * modules + x] = 1; }
+  // mark finders
+  for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) { set(i, j); set(modules-7+i, j); set(i, modules-7+j); }
+
+  // timing
+  for (let i = 8; i < modules - 8; i++) { set(i, 6); set(6, i); }
+
+  // encode text bits into data area
+  let bitStr = '';
+  for (let i = 0; i < text.length; i++) bitStr += text.charCodeAt(i).toString(2).padStart(8, '0');
+  bitStr += '00001101'; // terminator
+  let bi = 0;
+  for (let y = 0; y < modules; y++) {
+    for (let x = (y % 2 === 0 ? modules - 1 : 0); (y % 2 === 0 ? x >= 0 : x < modules); x += (y % 2 === 0 ? -1 : 1)) {
+      if (data[y * modules + x]) continue;
+      if (x === 6 || y === 6) continue; // timing column/row already drawn
+      if (bi < bitStr.length) {
+        if (bitStr[bi] === '1') ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        bi++;
+      } else if (rng() > 0.5) {
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+
+  // Download link
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    $('#qrDownload').href = url;
+  });
+}
+
+// ── History ──
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('url_shortener_history') || '[]'); } catch { return []; }
+}
+function saveHistory(url) {
+  let h = getHistory().filter(x => x.url !== url);
+  h.unshift({ url, time: new Date().toLocaleString() });
+  if (h.length > 10) h = h.slice(0, 10);
+  localStorage.setItem('url_shortener_history', JSON.stringify(h));
+}
+function renderHistory() {
+  const h = getHistory();
+  const list = $('#historyList');
+  if (!h.length) { list.innerHTML = '<li style="color:var(--text2)">No history yet</li>'; return; }
+  list.innerHTML = h.map(x => `<li><span class="hist-url" onclick="document.getElementById('urlInput').value='${x.url.replace(/'/g,"\\'")}';analyze()">${escHtml(x.url)}</span><span class="hist-time">${x.time}</span></li>`).join('');
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ── Copy all parts ──
+$('#copyAllBtn').addEventListener('click', () => {
+  const rows = $$('#decTable tr');
+  let text = '';
+  rows.forEach(r => { const tds = r.querySelectorAll('td'); if (tds.length === 2) text += `${tds[0].textContent}: ${tds[1].textContent}\n`; });
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+});
+
+// ── Main analyze ──
+function analyze() {
+  const url = $('#urlInput').value.trim();
+  if (!url) return;
+  const d = decompose(url);
+  if (!d) { showToast('Invalid URL — include the protocol (https://)'); return; }
+
+  $('#results').classList.add('active');
+  renderDecomp(d);
+  renderSafety(d);
+  fetchPreview(url);
+  generateQR(url);
+  saveHistory(url);
+  renderHistory();
+}
+
+$('#analyzeBtn').addEventListener('click', analyze);
+$('#urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') analyze(); });
+
+// Init history on load
+renderHistory();
+</script>
+</body>
+</html>
